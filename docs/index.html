@@ -13,21 +13,34 @@
       :root { color-scheme: light dark; }
       * { box-sizing: border-box; }
       body {
-        margin: 0 auto; max-width: 62rem; padding: 3rem 1.25rem 5rem;
+        margin: 0 auto; max-width: 62rem; padding: 2rem 1.25rem 5rem;
         font: 16px/1.65 system-ui, -apple-system, "Segoe UI", sans-serif;
         color: #17181a; background: #fff;
       }
+      nav { margin-bottom: 2.5rem; font-size: .93rem; color: #8b9098; }
+      nav a { color: #6a6f76; }
+      nav [aria-current] { color: #17181a; font-weight: 600; }
       h1 { font-size: 2.1rem; line-height: 1.2; margin: 0 0 .5rem; letter-spacing: -.02em; }
       h2 { font-size: 1.05rem; text-transform: uppercase; letter-spacing: .08em;
            color: #6a6f76; margin: 3rem 0 1rem; font-weight: 600; }
-      h3 { margin: 0 0 .15rem; font-size: 1.1rem; }
+      h3 { margin: 2rem 0 .15rem; font-size: 1.1rem; }
+      p, li { max-width: 46rem; }
       a { color: #0a58ca; text-decoration: none; }
       a:hover { text-decoration: underline; }
+      code { background: #f2f3f5; padding: .1rem .3rem; border-radius: 3px; font-size: .9em; }
+      pre { background: #f7f8f9; border: 1px solid #e3e5e8; border-radius: 8px; padding: 1rem;
+            overflow-x: auto; max-width: 52rem; }
+      pre code { background: none; padding: 0; font-size: .86rem; line-height: 1.5; }
+      table { border-collapse: collapse; margin: 1rem 0; max-width: 52rem; font-size: .93rem; }
+      th, td { border: 1px solid #e3e5e8; padding: .45rem .7rem; text-align: left;
+               vertical-align: top; }
+      th { background: #f7f8f9; }
       .lede { font-size: 1.15rem; color: #33373d; max-width: 44rem; }
       .rule { max-width: 44rem; border-left: 3px solid #17181a; padding-left: 1rem;
               margin: 2rem 0; }
       .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); }
       .card { border: 1px solid #e3e5e8; border-radius: 10px; padding: 1.1rem 1.2rem; }
+      .card h3 { margin-top: 0; }
       .card p { margin: .5rem 0 0; font-size: .93rem; color: #3c4046; }
       .kind { font-size: .78rem !important; text-transform: uppercase; letter-spacing: .06em;
               color: #8b9098 !important; margin-top: 0 !important; }
@@ -37,17 +50,24 @@
       @media (prefers-color-scheme: dark) {
         body { color: #e9ebee; background: #101214; }
         h3 { color: #e9ebee; }
+        nav [aria-current] { color: #e9ebee; }
         .lede { color: #c3c7cc; }
         .rule { border-left-color: #e9ebee; }
         .card { border-color: #262a2e; }
         .card p { color: #b3b8bf; }
         .tagline { color: #e9ebee !important; }
+        code { background: #1b1f23; }
+        pre { background: #16191c; border-color: #262a2e; }
+        th, td { border-color: #262a2e; }
+        th { background: #16191c; }
         a { color: #79a9ff; }
         footer { border-top-color: #262a2e; }
       }
     </style>
   </head>
   <body>
+    <nav><span aria-current="page">Start here</span> · <a href="concepts.html">What it proves</a> · <a href="tutorial.html">Tutorial</a> · <a href="architecture.html">Architecture</a> · <a href="faq.html">FAQ</a></nav>
+
     <h1>Check the proof, not the promise.</h1>
 
     <p class="lede">
@@ -65,6 +85,11 @@
         it has not earned is worse than no verifier, because it is believed.
       </p>
     </div>
+
+    <p>
+      New here? <a href="concepts.html">What it proves, and what it does not</a> is the five-minute
+      version. <a href="tutorial.html">The tutorial</a> takes one real bounds check end to end.
+    </p>
 
     <section>
       <h2>Checkers — the part you are meant to audit</h2>
@@ -162,13 +187,14 @@
       </div>
     </section>
 
+
     <footer>
       <p>
         Apache-2.0. Sources on <a href="https://github.com/nickharris808">GitHub</a>; datasets and
         demos on <a href="https://huggingface.co/nickh007">Hugging Face</a>.
       </p>
       <p>
-        Every link on this page is fetched by CI. Every number in each project's README is
+        Every link on this site is fetched by CI. Every number in each project's README is
         reproducible by running that project's code.
       </p>
     </footer>

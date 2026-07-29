@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>What this proves, and what it does not — certified discovery</title>
+    <meta
+      name="description"
+      content="A toolkit built on one asymmetry: checking a proof is cheap and auditable, so the
+      thing that produced it does not have to be trusted."
+    />
+    <style>
+      :root { color-scheme: light dark; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0 auto; max-width: 62rem; padding: 2rem 1.25rem 5rem;
+        font: 16px/1.65 system-ui, -apple-system, "Segoe UI", sans-serif;
+        color: #17181a; background: #fff;
+      }
+      nav { margin-bottom: 2.5rem; font-size: .93rem; color: #8b9098; }
+      nav a { color: #6a6f76; }
+      nav [aria-current] { color: #17181a; font-weight: 600; }
+      h1 { font-size: 2.1rem; line-height: 1.2; margin: 0 0 .5rem; letter-spacing: -.02em; }
+      h2 { font-size: 1.05rem; text-transform: uppercase; letter-spacing: .08em;
+           color: #6a6f76; margin: 3rem 0 1rem; font-weight: 600; }
+      h3 { margin: 2rem 0 .15rem; font-size: 1.1rem; }
+      p, li { max-width: 46rem; }
+      a { color: #0a58ca; text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      code { background: #f2f3f5; padding: .1rem .3rem; border-radius: 3px; font-size: .9em; }
+      pre { background: #f7f8f9; border: 1px solid #e3e5e8; border-radius: 8px; padding: 1rem;
+            overflow-x: auto; max-width: 52rem; }
+      pre code { background: none; padding: 0; font-size: .86rem; line-height: 1.5; }
+      table { border-collapse: collapse; margin: 1rem 0; max-width: 52rem; font-size: .93rem; }
+      th, td { border: 1px solid #e3e5e8; padding: .45rem .7rem; text-align: left;
+               vertical-align: top; }
+      th { background: #f7f8f9; }
+      .lede { font-size: 1.15rem; color: #33373d; max-width: 44rem; }
+      .rule { max-width: 44rem; border-left: 3px solid #17181a; padding-left: 1rem;
+              margin: 2rem 0; }
+      .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); }
+      .card { border: 1px solid #e3e5e8; border-radius: 10px; padding: 1.1rem 1.2rem; }
+      .card h3 { margin-top: 0; }
+      .card p { margin: .5rem 0 0; font-size: .93rem; color: #3c4046; }
+      .kind { font-size: .78rem !important; text-transform: uppercase; letter-spacing: .06em;
+              color: #8b9098 !important; margin-top: 0 !important; }
+      .tagline { font-weight: 600; color: #17181a !important; }
+      footer { margin-top: 4rem; padding-top: 1.5rem; border-top: 1px solid #e3e5e8;
+               color: #6a6f76; font-size: .9rem; }
+      @media (prefers-color-scheme: dark) {
+        body { color: #e9ebee; background: #101214; }
+        h3 { color: #e9ebee; }
+        nav [aria-current] { color: #e9ebee; }
+        .lede { color: #c3c7cc; }
+        .rule { border-left-color: #e9ebee; }
+        .card { border-color: #262a2e; }
+        .card p { color: #b3b8bf; }
+        .tagline { color: #e9ebee !important; }
+        code { background: #1b1f23; }
+        pre { background: #16191c; border-color: #262a2e; }
+        th, td { border-color: #262a2e; }
+        th { background: #16191c; }
+        a { color: #79a9ff; }
+        footer { border-top-color: #262a2e; }
+      }
+    </style>
+  </head>
+  <body>
+    <nav><a href="index.html">Start here</a> · <span aria-current="page">What it proves</span> · <a href="tutorial.html">Tutorial</a> · <a href="architecture.html">Architecture</a> · <a href="faq.html">FAQ</a></nav>
+
+<h1>What this proves, and what it does not</h1>
+
+<p class="lede">
+  Every tool here answers one narrow question exactly, and refuses the rest. This page is about
+  where that line falls — because the most expensive mistake with a verifier is not disbelieving a
+  correct result, it is believing a result that means less than you think.
+</p>
+
+<h2>The one idea</h2>
+
+<p>
+  Finding a proof is hard. <em>Checking</em> one is easy. That asymmetry is the whole design: the
+  thing that produces a proof can be a solver, a model, a stranger, or a program you would never
+  run in production, because the checker re-derives the claim from scratch and needs to trust
+  nothing the producer says.
+</p>
+
+<p>
+  A <strong>Farkas certificate</strong> is what makes the checking part small. To show that a guard
+  implies a safety property, you show the opposite is impossible: assume the guard holds
+  <em>and</em> safety fails, and exhibit nonnegative weights that combine those assumptions into
+  an arithmetic contradiction — every variable cancels, and an impossible constant is left over.
+  Verifying that is multiplication and addition. There is no search in it, no solver, and no
+  floating point.
+</p>
+
+<pre><code>domain:  0 &lt;= payload &lt;= 65535
+guard:   19 + payload &lt;= record_len
+safety:  3  + payload &lt;= record_len
+
+obligation:  domain AND guard AND NOT(safety)      &lt;- must be impossible
+weights:     1 x guard, 1 x NOT(safety)            &lt;- payload and record_len cancel; 16 &gt; 0 remains
+</code></pre>
+
+<h2>The reconstruction defence</h2>
+
+<p>
+  A checker that read the atoms out of the certificate and verified the weights against
+  <em>those</em> would be close to worthless: a certificate carrying an easy, unrelated system
+  together with a perfectly valid refutation of it would pass, having proved nothing about your
+  program. So the checker <strong>ignores every atom the certificate carries</strong> and rebuilds
+  the obligation from the specification. The certificate may supply the weights and nothing else.
+</p>
+
+<p>
+  The certificate is separately bound to the spec by a fingerprint over its canonical bytes. That
+  detects drift, stale files, and copy-paste. It is <em>not</em> a defence against a determined
+  forger, who would simply recompute it over an edited spec. What stands between you and a bad
+  guard is that the relations are short enough for a person to read — which is why the format keeps
+  them short.
+</p>
+
+<h2>The third verdict</h2>
+
+<p>
+  Every tool in this portfolio has a verdict that is neither pass nor fail.
+</p>
+
+<table>
+  <tr><th>Tool</th><th>Third verdict</th><th>Meaning</th></tr>
+  <tr><td>certkit</td><td><code>UNVERIFIED</code></td><td>The arithmetic checked out but a required precondition was never established. No claim is being made.</td></tr>
+  <tr><td>crs-mcp</td><td><code>OUT_OF_SCOPE</code></td><td>The region is too large to decide by enumeration. No verdict was reached.</td></tr>
+  <tr><td>exploit-counter</td><td><code>is_sound = None</code></td><td>Undecided. <code>__bool__</code> raises, so <code>if decision:</code> cannot quietly mean "sound".</td></tr>
+  <tr><td>soundnessbench</td><td><code>ABSTAIN</code></td><td>A correct answer. It costs decisiveness and never fails the soundness gate.</td></tr>
+</table>
+
+<p>
+  These exist so that <em>"I did not establish this"</em> never has to be rounded to <em>"fine"</em>.
+  It is the single most load-bearing decision in the toolkit, and it is why a refusal here is never
+  a disproof: <strong>failing to find a proof is not a proof of the negation.</strong> A tool that
+  reported "REFUSED" as "your guard is broken" would be inventing a result in the other direction.
+</p>
+
+<h2>Four things a green result does not mean</h2>
+
+<h3>1. It does not mean your program is safe</h3>
+
+<p>
+  It means the relations you wrote imply each other. Nothing here reads your source. If the spec
+  models the wrong check, or the right check in the wrong place, the certificate is a correct proof
+  about a model that does not describe your code. This is the most common way to be wrong while
+  holding a valid certificate, and no amount of arithmetic rigour touches it.
+</p>
+
+<h3>2. It does not mean machine arithmetic</h3>
+
+<p>
+  Atoms are relations over the mathematical integers and rationals. <code>x + 1 &gt; x</code> is a
+  theorem here and false for a 32-bit <code>int</code> at <code>INT_MAX</code>. If the arithmetic
+  in your program wraps, saturates, or truncates, a proof here says nothing about that path. The
+  SMT-LIB scripts <code>certkit export</code> writes carry this warning in a comment, because a
+  solver will not tell you either.
+</p>
+
+<h3>3. It does not extend past the declared box</h3>
+
+<p>
+  <code>CERTIFIED</code> from <code>crs-mcp</code> is a statement about the integer box you
+  declared. Outside it, nothing was examined. The tools say this in the verdict text rather than in
+  a footnote, because a verdict is what gets pasted into a pull request.
+</p>
+
+<h3>4. A count is not a severity</h3>
+
+<p>
+  <code>exploit-counter</code> reports how many states a guard admits that safety forbids. That is
+  a triggerability figure under uniform sampling over a declared region. It is not CVSS, not a
+  severity score, and not a claim that any counted state is reachable from an attacker's position,
+  let alone weaponisable.
+</p>
+
+<h2>What is deliberately absent</h2>
+
+<ul>
+  <li><strong>A producer.</strong> None of the published tools search for multipliers. That is not
+      an omission to be fixed casually: the moment a checker also produces, the reason to trust it
+      changes shape.</li>
+  <li><strong>Nonlinearity.</strong> Products of variables, division, modulo, bit operations. A spec
+      that needs them cannot be written, which is better than one that can be written and quietly
+      means something else.</li>
+  <li><strong>Statistical claims about real-world code.</strong> Six CVE classes are six CVE
+      classes. The corpus and the benchmark's hard split say what they are and no more.</li>
+</ul>
+
+<h2>Where to go next</h2>
+
+<ul>
+  <li><a href="tutorial.html">The tutorial</a> — one bounds check, end to end, across four tools.</li>
+  <li><a href="faq.html">The FAQ</a> — the objections a sceptic actually raises, answered.</li>
+  <li><a href="architecture.html">Architecture</a> — what each piece is, and where the trust boundary sits.</li>
+</ul>
+
+
+    <footer>
+      <p>
+        Apache-2.0. Sources on <a href="https://github.com/nickharris808">GitHub</a>; datasets and
+        demos on <a href="https://huggingface.co/nickh007">Hugging Face</a>.
+      </p>
+      <p>
+        Every link on this site is fetched by CI. Every number in each project's README is
+        reproducible by running that project's code.
+      </p>
+    </footer>
+  </body>
+</html>

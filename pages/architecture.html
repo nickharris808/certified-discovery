@@ -1,0 +1,115 @@
+<h1>How the pieces fit</h1>
+
+<p class="lede">
+  Ten artifacts, one trust boundary. This page is the map: what each piece does, what depends on
+  what, and — the part that matters — which side of the boundary each one sits on.
+</p>
+
+<h2>The trust boundary</h2>
+
+<pre><code>  UNTRUSTED                          |  TRUSTED (and small enough to read)
+  ---------------------------------- | ----------------------------------
+  whatever produced the certificate  |  certkit          ~30 lines of arithmetic
+    a solver, an LP, a model, you    |  certkit-js       the same, written separately
+                                     |
+  the specification                  |  <- NOT trusted by the checker, but not
+    (a human wrote these relations)  |     checked by it either. See below.
+</code></pre>
+
+<p>
+  The checker trusts nothing the certificate says: it rebuilds every obligation from the
+  specification and ignores any atoms the certificate carries. What it cannot do is tell you the
+  specification describes your program. That is the one assumption the whole system rests on, and
+  it is why specs are kept to a handful of readable relations.
+</p>
+
+<h2>Dependency direction</h2>
+
+<pre><code>  certkit  (no dependencies, standard library only)
+     ^
+     |-- exploit-counter   uses certkit's atom type; adds exact counting
+     |        ^
+     |        |
+     |-- crs-mcp           wraps both, exposes them to agents
+     |
+     |-- certkit-action    runs the CLI in a workflow
+     |
+  soundnessbench           deliberately does NOT import certkit
+                           (it has to be able to grade certkit)
+
+  certkit-js               shares NO code with certkit, by construction
+</code></pre>
+
+<p>
+  The two non-arrows are the interesting ones. <strong>soundnessbench</strong> computes its ground
+  truth by its own exhaustive enumeration, with its own atom representation, because a benchmark
+  that imported the tool it grades would be measuring agreement rather than correctness.
+  <strong>certkit-js</strong> is a separate implementation for the same reason: two programs that
+  share no code agreeing on 246 vectors is evidence; one program agreeing with itself is not.
+</p>
+
+<h2>Inside certkit</h2>
+
+<table>
+  <tr><th>Module</th><th>Role</th><th>Trusted?</th></tr>
+  <tr><td><code>atoms.py</code></td><td>The one canonical relation shape: <code>sum(c*v) + k &lt;= 0</code>. Exact rationals.</td><td>yes</td></tr>
+  <tr><td><code>farkas.py</code></td><td>The refutation check itself. No search, no solver, no floats.</td><td><strong>yes — this is the core</strong></td></tr>
+  <tr><td><code>cert.py</code></td><td>Reconstruction, fingerprint binding, the three verdicts.</td><td>yes</td></tr>
+  <tr><td><code>report.py</code></td><td>Every output format from one place, so a refusal is worded identically everywhere.</td><td>presentation</td></tr>
+  <tr><td><code>schemas/</code></td><td>JSON Schema for both formats, so other tools can emit them.</td><td>data</td></tr>
+  <tr><td><code>smtlib.py</code></td><td>Export is total; import is deliberately partial and refuses by name.</td><td>bridge</td></tr>
+  <tr><td><code>scaffold.py</code>, <code>explain.py</code></td><td>Authoring and prose. Never change a verdict.</td><td>convenience</td></tr>
+  <tr><td><code>lsp.py</code>, <code>notebook.py</code>, <code>precommit.py</code></td><td>Frontends. Each re-uses the same verdict; none of them softens it.</td><td>frontend</td></tr>
+</table>
+
+<p>
+  The rule for everything below <code>cert.py</code>: <strong>a frontend may change how a verdict is
+  displayed and may never change what it is.</strong> That is enforced by tests rather than by
+  convention — the notebook renderer, the SARIF output, the JUnit output, the LSP diagnostics and
+  the pre-commit hook each have a test asserting that <code>UNVERIFIED</code> does not render as a
+  pass.
+</p>
+
+<h2>Where the expensive work happens</h2>
+
+<p>
+  Checking is linear in the size of the obligation and takes microseconds. The costly parts of the
+  toolkit are elsewhere, and each is capped rather than allowed to degrade:
+</p>
+
+<ul>
+  <li><strong>exploit-counter</strong> enumerates a declared box exactly. The cap applies to the
+      enumerated product, not the box volume, and exceeding it is a refusal with a reason — never a
+      silently sampled answer presented as exact.</li>
+  <li><strong>soundnessbench</strong> brute-forces every task's answer. That is why the boxes are
+      small, and why the answers ship precomputed, keyed by a content hash of the relations so an
+      edited task cannot be served a stale answer.</li>
+</ul>
+
+<h2>Caches, and why they cannot go stale</h2>
+
+<p>
+  Two caches ship as committed data files: the benchmark's ground truth, and the minimal-break
+  offsets its hard split needs. Both are keyed by a hash of the relations they answer. Editing a
+  task changes the key, misses the cache, and recomputes. Staleness is not detected — it is
+  unreachable, which is a different and much stronger property.
+</p>
+
+<p>
+  Every other cache in the toolkit is in-process and keyed by input: the suite memo, and the schema
+  loader. A test asserts that a mutated task produces a different key, so the property is checked
+  rather than asserted.
+</p>
+
+<h2>The three data artifacts</h2>
+
+<ul>
+  <li><strong>cve-proof-corpus</strong> — six real vulnerability classes: the relation each check
+      turned on, in words and in atoms, with a certificate that re-verifies from the published file.</li>
+  <li><strong>soundnessbench</strong> tasks — synthetic families plus a hard split derived from the
+      corpus. Ground truth by enumeration, always.</li>
+  <li><strong>certkit-js vectors</strong> — 246 spec/certificate pairs with the verdict CPython
+      reached, replayed by the JavaScript implementation in CI.</li>
+</ul>
+
+<p>Each is generated by a committed script, and CI regenerates and compares rather than trusting the file.</p>

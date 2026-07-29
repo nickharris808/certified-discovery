@@ -1,0 +1,138 @@
+<h1>Questions a sceptic actually asks</h1>
+
+<h2>How is this different from just running z3?</h2>
+
+<p>
+  It is not a replacement for z3 — it is a different job. A solver answers "is this satisfiable?"
+  and you have to trust the solver's answer, its version, its options, and that it was run at all.
+  A certificate is an artifact: it travels with the code, it is re-checkable by a program small
+  enough to read in an afternoon, and re-checking it needs no solver installed. Use z3 to
+  <em>find</em> the proof; use this to <em>ship</em> it.
+</p>
+
+<p>
+  And you can have both: <code>certkit export</code> writes the obligation as SMT-LIB, so z3 and
+  cvc5 can check the same claim independently. That comparison runs in CI here on every push.
+</p>
+
+<h2>Why should I believe a checker you wrote?</h2>
+
+<p>
+  You should not, on my say-so. Three things are offered instead. First, the checker is about
+  thirty lines of arithmetic with no search and no floating point, so reading it is realistic
+  rather than aspirational. Second, there are <strong>two</strong> checkers — a Python one and a
+  JavaScript one, written separately — and 246 differential vectors are replayed across both in CI;
+  if they ever disagree, the build goes red. Third, the exported obligations are checked by z3 and
+  cvc5, which I did not write.
+</p>
+
+<p>
+  There is also a fourth thing, which is the one I would look at: the test suite has been
+  <em>mutation-tested</em>. Six single-line changes were made to the checker to see whether the
+  tests noticed. Three were missed at first — nothing distinguished "the weighted sum cancels to
+  exactly zero" from "cancels to positive", which is precisely an unsound checker. Those cases
+  exist now because that experiment failed. A test suite that has never been shown to fail is a
+  claim, not evidence.
+</p>
+
+<h2>What happens if the spec is wrong?</h2>
+
+<p>
+  Then you have a correct proof about the wrong thing, and no tool here will tell you. This is the
+  honest weak point of the whole approach. The mitigation is not technical: the specification is
+  four or five short relations, deliberately, so that a human can read it in a minute and say "yes,
+  that is the check my code performs". Everything else in the design exists to keep that surface
+  small enough to be readable.
+</p>
+
+<h2>Is this formal verification?</h2>
+
+<p>
+  It is a small, sharply bounded piece of it. There is no program semantics here, no memory model,
+  no separation logic, and nothing reads your source. What is verified is an implication between
+  linear relations over the integers. That is genuinely a proof, and it is genuinely much less than
+  "this program is correct".
+</p>
+
+<h2>Why is the producer not included?</h2>
+
+<p>
+  Because the interesting asymmetry is that it does not need to be. A checker you trust plus a
+  producer you do not is a working system; a producer you trust with no checker is a promise. The
+  tools are published in the half that makes the other half optional.
+</p>
+
+<p>
+  The practical consequence is real and worth stating: for anything past a trivial obligation you
+  need something to find the multipliers — a solver, an LP, or your own tool writing against the
+  published format and schemas.
+</p>
+
+<h2>Your benchmark grades your own tools. Isn't that circular?</h2>
+
+<p>
+  The ground truth is computed by exhaustive point-by-point enumeration that shares no code with
+  anything being graded — the dumbest possible algorithm, chosen because it is too simple to be
+  wrong in an interesting way. That is also why the task boxes are small: a benchmark whose answers
+  you cannot independently confirm is a leaderboard, not a measurement.
+</p>
+
+<p>
+  The headline metric is a gate rather than an average, and it is unkind to the tools that
+  published it: any tool that ever calls an unsound guard sound fails, whatever else it scores. The
+  sampling baseline fails. That is the point of including it.
+</p>
+
+<h2>Six CVEs is not a lot.</h2>
+
+<p>
+  It is not, and nothing here claims otherwise. The corpus is six real vulnerability classes with
+  certificates that re-verify from the published data, and the benchmark's hard split derives its
+  relations from them. What it measures is whether a tool gets <em>these</em> real shapes right —
+  more than a synthetic suite measures, and much less than a survey of real-world code.
+</p>
+
+<h2>Why does a refusal not tell me my guard is broken?</h2>
+
+<p>
+  Because it does not know. A Farkas certificate proves infeasibility over the rationals; failing
+  to find one means this certificate did not establish the claim, not that the claim is false.
+  When you want the other direction, that is a different tool: <code>exploit-counter</code> and
+  <code>crs-mcp</code> exhibit an actual escaping state, and only then do they say "unsound" — with
+  the counterexample attached.
+</p>
+
+<h2>What is the catch with UNVERIFIED?</h2>
+
+<p>
+  That it is easy to treat as a warning. It is not: it means a precondition of the check never
+  happened, so the tool is declining to certify. Every gate in this toolkit treats it as a failure,
+  and every output format keeps it as its own level — SARIF rule, JUnit failure type, its own colour
+  in a notebook — because a format that rendered it as a pass would undo the reason it exists.
+</p>
+
+<h2>Can I use this on my Rust / Go / TypeScript code?</h2>
+
+<p>
+  The format is language-agnostic: it is arithmetic, not syntax. What is missing for any given
+  language is the step that turns a source-level check into relations, and that step is currently
+  a person reading the code. The JSON Schemas and the JavaScript implementation exist so that a
+  tool in another ecosystem can emit and check the format without asking permission.
+</p>
+
+<h2>Is any of this on PyPI or npm?</h2>
+
+<p>
+  Not yet. Installs are from source over git, which is tested on Linux, macOS, and Windows in CI.
+  Publication needs an account action rather than more code; the packaging metadata is complete and
+  the built artifacts are verified in CI by installing them into a clean project.
+</p>
+
+<h2>What would change your mind about this approach?</h2>
+
+<p>
+  A demonstration that the specification-writing step is where all the errors actually live would
+  make the checker's rigour beside the point — and that is a real possibility, not a rhetorical
+  one. It is why the corpus records the relation in words next to the relation in atoms, and why
+  the tutorial spends more time on modelling than on the proof.
+</p>

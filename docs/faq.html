@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Questions a sceptic actually asks — certified discovery</title>
+    <meta
+      name="description"
+      content="A toolkit built on one asymmetry: checking a proof is cheap and auditable, so the
+      thing that produced it does not have to be trusted."
+    />
+    <style>
+      :root { color-scheme: light dark; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0 auto; max-width: 62rem; padding: 2rem 1.25rem 5rem;
+        font: 16px/1.65 system-ui, -apple-system, "Segoe UI", sans-serif;
+        color: #17181a; background: #fff;
+      }
+      nav { margin-bottom: 2.5rem; font-size: .93rem; color: #8b9098; }
+      nav a { color: #6a6f76; }
+      nav [aria-current] { color: #17181a; font-weight: 600; }
+      h1 { font-size: 2.1rem; line-height: 1.2; margin: 0 0 .5rem; letter-spacing: -.02em; }
+      h2 { font-size: 1.05rem; text-transform: uppercase; letter-spacing: .08em;
+           color: #6a6f76; margin: 3rem 0 1rem; font-weight: 600; }
+      h3 { margin: 2rem 0 .15rem; font-size: 1.1rem; }
+      p, li { max-width: 46rem; }
+      a { color: #0a58ca; text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      code { background: #f2f3f5; padding: .1rem .3rem; border-radius: 3px; font-size: .9em; }
+      pre { background: #f7f8f9; border: 1px solid #e3e5e8; border-radius: 8px; padding: 1rem;
+            overflow-x: auto; max-width: 52rem; }
+      pre code { background: none; padding: 0; font-size: .86rem; line-height: 1.5; }
+      table { border-collapse: collapse; margin: 1rem 0; max-width: 52rem; font-size: .93rem; }
+      th, td { border: 1px solid #e3e5e8; padding: .45rem .7rem; text-align: left;
+               vertical-align: top; }
+      th { background: #f7f8f9; }
+      .lede { font-size: 1.15rem; color: #33373d; max-width: 44rem; }
+      .rule { max-width: 44rem; border-left: 3px solid #17181a; padding-left: 1rem;
+              margin: 2rem 0; }
+      .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); }
+      .card { border: 1px solid #e3e5e8; border-radius: 10px; padding: 1.1rem 1.2rem; }
+      .card h3 { margin-top: 0; }
+      .card p { margin: .5rem 0 0; font-size: .93rem; color: #3c4046; }
+      .kind { font-size: .78rem !important; text-transform: uppercase; letter-spacing: .06em;
+              color: #8b9098 !important; margin-top: 0 !important; }
+      .tagline { font-weight: 600; color: #17181a !important; }
+      footer { margin-top: 4rem; padding-top: 1.5rem; border-top: 1px solid #e3e5e8;
+               color: #6a6f76; font-size: .9rem; }
+      @media (prefers-color-scheme: dark) {
+        body { color: #e9ebee; background: #101214; }
+        h3 { color: #e9ebee; }
+        nav [aria-current] { color: #e9ebee; }
+        .lede { color: #c3c7cc; }
+        .rule { border-left-color: #e9ebee; }
+        .card { border-color: #262a2e; }
+        .card p { color: #b3b8bf; }
+        .tagline { color: #e9ebee !important; }
+        code { background: #1b1f23; }
+        pre { background: #16191c; border-color: #262a2e; }
+        th, td { border-color: #262a2e; }
+        th { background: #16191c; }
+        a { color: #79a9ff; }
+        footer { border-top-color: #262a2e; }
+      }
+    </style>
+  </head>
+  <body>
+    <nav><a href="index.html">Start here</a> · <a href="concepts.html">What it proves</a> · <a href="tutorial.html">Tutorial</a> · <a href="architecture.html">Architecture</a> · <span aria-current="page">FAQ</span></nav>
+
+<h1>Questions a sceptic actually asks</h1>
+
+<h2>How is this different from just running z3?</h2>
+
+<p>
+  It is not a replacement for z3 — it is a different job. A solver answers "is this satisfiable?"
+  and you have to trust the solver's answer, its version, its options, and that it was run at all.
+  A certificate is an artifact: it travels with the code, it is re-checkable by a program small
+  enough to read in an afternoon, and re-checking it needs no solver installed. Use z3 to
+  <em>find</em> the proof; use this to <em>ship</em> it.
+</p>
+
+<p>
+  And you can have both: <code>certkit export</code> writes the obligation as SMT-LIB, so z3 and
+  cvc5 can check the same claim independently. That comparison runs in CI here on every push.
+</p>
+
+<h2>Why should I believe a checker you wrote?</h2>
+
+<p>
+  You should not, on my say-so. Three things are offered instead. First, the checker is about
+  thirty lines of arithmetic with no search and no floating point, so reading it is realistic
+  rather than aspirational. Second, there are <strong>two</strong> checkers — a Python one and a
+  JavaScript one, written separately — and 246 differential vectors are replayed across both in CI;
+  if they ever disagree, the build goes red. Third, the exported obligations are checked by z3 and
+  cvc5, which I did not write.
+</p>
+
+<p>
+  There is also a fourth thing, which is the one I would look at: the test suite has been
+  <em>mutation-tested</em>. Six single-line changes were made to the checker to see whether the
+  tests noticed. Three were missed at first — nothing distinguished "the weighted sum cancels to
+  exactly zero" from "cancels to positive", which is precisely an unsound checker. Those cases
+  exist now because that experiment failed. A test suite that has never been shown to fail is a
+  claim, not evidence.
+</p>
+
+<h2>What happens if the spec is wrong?</h2>
+
+<p>
+  Then you have a correct proof about the wrong thing, and no tool here will tell you. This is the
+  honest weak point of the whole approach. The mitigation is not technical: the specification is
+  four or five short relations, deliberately, so that a human can read it in a minute and say "yes,
+  that is the check my code performs". Everything else in the design exists to keep that surface
+  small enough to be readable.
+</p>
+
+<h2>Is this formal verification?</h2>
+
+<p>
+  It is a small, sharply bounded piece of it. There is no program semantics here, no memory model,
+  no separation logic, and nothing reads your source. What is verified is an implication between
+  linear relations over the integers. That is genuinely a proof, and it is genuinely much less than
+  "this program is correct".
+</p>
+
+<h2>Why is the producer not included?</h2>
+
+<p>
+  Because the interesting asymmetry is that it does not need to be. A checker you trust plus a
+  producer you do not is a working system; a producer you trust with no checker is a promise. The
+  tools are published in the half that makes the other half optional.
+</p>
+
+<p>
+  The practical consequence is real and worth stating: for anything past a trivial obligation you
+  need something to find the multipliers — a solver, an LP, or your own tool writing against the
+  published format and schemas.
+</p>
+
+<h2>Your benchmark grades your own tools. Isn't that circular?</h2>
+
+<p>
+  The ground truth is computed by exhaustive point-by-point enumeration that shares no code with
+  anything being graded — the dumbest possible algorithm, chosen because it is too simple to be
+  wrong in an interesting way. That is also why the task boxes are small: a benchmark whose answers
+  you cannot independently confirm is a leaderboard, not a measurement.
+</p>
+
+<p>
+  The headline metric is a gate rather than an average, and it is unkind to the tools that
+  published it: any tool that ever calls an unsound guard sound fails, whatever else it scores. The
+  sampling baseline fails. That is the point of including it.
+</p>
+
+<h2>Six CVEs is not a lot.</h2>
+
+<p>
+  It is not, and nothing here claims otherwise. The corpus is six real vulnerability classes with
+  certificates that re-verify from the published data, and the benchmark's hard split derives its
+  relations from them. What it measures is whether a tool gets <em>these</em> real shapes right —
+  more than a synthetic suite measures, and much less than a survey of real-world code.
+</p>
+
+<h2>Why does a refusal not tell me my guard is broken?</h2>
+
+<p>
+  Because it does not know. A Farkas certificate proves infeasibility over the rationals; failing
+  to find one means this certificate did not establish the claim, not that the claim is false.
+  When you want the other direction, that is a different tool: <code>exploit-counter</code> and
+  <code>crs-mcp</code> exhibit an actual escaping state, and only then do they say "unsound" — with
+  the counterexample attached.
+</p>
+
+<h2>What is the catch with UNVERIFIED?</h2>
+
+<p>
+  That it is easy to treat as a warning. It is not: it means a precondition of the check never
+  happened, so the tool is declining to certify. Every gate in this toolkit treats it as a failure,
+  and every output format keeps it as its own level — SARIF rule, JUnit failure type, its own colour
+  in a notebook — because a format that rendered it as a pass would undo the reason it exists.
+</p>
+
+<h2>Can I use this on my Rust / Go / TypeScript code?</h2>
+
+<p>
+  The format is language-agnostic: it is arithmetic, not syntax. What is missing for any given
+  language is the step that turns a source-level check into relations, and that step is currently
+  a person reading the code. The JSON Schemas and the JavaScript implementation exist so that a
+  tool in another ecosystem can emit and check the format without asking permission.
+</p>
+
+<h2>Is any of this on PyPI or npm?</h2>
+
+<p>
+  Not yet. Installs are from source over git, which is tested on Linux, macOS, and Windows in CI.
+  Publication needs an account action rather than more code; the packaging metadata is complete and
+  the built artifacts are verified in CI by installing them into a clean project.
+</p>
+
+<h2>What would change your mind about this approach?</h2>
+
+<p>
+  A demonstration that the specification-writing step is where all the errors actually live would
+  make the checker's rigour beside the point — and that is a real possibility, not a rhetorical
+  one. It is why the corpus records the relation in words next to the relation in atoms, and why
+  the tutorial spends more time on modelling than on the proof.
+</p>
+
+
+    <footer>
+      <p>
+        Apache-2.0. Sources on <a href="https://github.com/nickharris808">GitHub</a>; datasets and
+        demos on <a href="https://huggingface.co/nickh007">Hugging Face</a>.
+      </p>
+      <p>
+        Every link on this site is fetched by CI. Every number in each project's README is
+        reproducible by running that project's code.
+      </p>
+    </footer>
+  </body>
+</html>

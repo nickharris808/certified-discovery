@@ -37,7 +37,9 @@ def urls(include_page: bool) -> list[str]:
 
 
 def fetch(url: str) -> tuple[int, str]:
-    request = urllib.request.Request(url, headers={"User-Agent": "certified-discovery-linkcheck"})
+    request = urllib.request.Request(
+        url, headers={"User-Agent": "certified-discovery-linkcheck"}
+    )
     try:
         with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
             return response.status, ""
@@ -51,7 +53,9 @@ def fetch(url: str) -> tuple[int, str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--page", action="store_true", help="also check hrefs in the built page")
+    parser.add_argument(
+        "--page", action="store_true", help="also check hrefs in the built page"
+    )
     args = parser.parse_args()
 
     bad = []
