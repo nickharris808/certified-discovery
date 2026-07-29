@@ -5,6 +5,42 @@ the thing that produced it does not have to be trusted.**
 
 **→ [nickharris808.github.io/certified-discovery](https://nickharris808.github.io/certified-discovery/)**
 
+## 30-second quickstart
+
+```bash
+git clone https://github.com/nickharris808/certified-discovery && cd certified-discovery
+python build.py
+```
+```
+wrote docs/index.html (11 KB)
+wrote docs/concepts.html (10 KB)
+wrote docs/tutorial.html (10 KB)
+wrote docs/architecture.html (10 KB)
+wrote docs/faq.html (10 KB)
+10 artifacts, 5 pages
+```
+
+Open `docs/index.html` in a browser — there is no server to run and no toolchain to install. Then:
+
+```bash
+python check_links.py --page   # fetches all 12 advertised URLs
+pytest -q                      # 16 tests: the pages are current, consistent and self-describing
+```
+
+## The artifacts
+
+| | |
+|---|---|
+| [certkit](https://github.com/nickharris808/certkit) | the certificate format and its checker |
+| [certkit-js](https://github.com/nickharris808/certkit-js) | the same checker, written independently in JavaScript |
+| [exploit-counter](https://github.com/nickharris808/exploit-counter) | exact over-acceptance counting |
+| [crs-mcp](https://github.com/nickharris808/crs-mcp) | proof-gated review for agents |
+| [soundnessbench](https://github.com/nickharris808/soundnessbench) | the benchmark, and its [leaderboard](https://huggingface.co/spaces/nickh007/soundnessbench-leaderboard) |
+| [pytest-mutation-verified](https://github.com/nickharris808/pytest-mutation-verified) | proving a regression test can fail |
+| [certkit-action](https://github.com/nickharris808/certkit-action) | the gate, as one line of workflow |
+| [cve-proof-corpus](https://huggingface.co/datasets/nickh007/cve-proof-corpus) | six real CVE classes with verifying certificates |
+| [certkit-demo](https://huggingface.co/spaces/nickh007/certkit-demo) | try the checker in a browser |
+
 ## What is in this repository
 
 | File | What it is |
@@ -36,3 +72,8 @@ A verifier that returns a confident answer it has not earned is worse than no ve
 is believed.
 
 Apache-2.0.
+
+## Licence and citation
+
+Apache-2.0 ([`LICENSE`](LICENSE)). Each artifact carries its own `CITATION.cff`; cite the one you
+used rather than this index.
