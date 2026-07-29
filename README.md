@@ -1,5 +1,10 @@
 # certified-discovery
 
+[![ci](https://github.com/nickharris808/certified-discovery/actions/workflows/ci.yml/badge.svg)](https://github.com/nickharris808/certified-discovery/actions/workflows/ci.yml)
+[![site](https://img.shields.io/badge/site-live-brightgreen.svg)](https://nickharris808.github.io/certified-discovery/)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![links](https://img.shields.io/badge/links-checked%20weekly-blue.svg)](check_links.py)
+
 The landing page for a toolkit built on one asymmetry: **checking a proof is cheap and auditable, so
 the thing that produced it does not have to be trusted.**
 
